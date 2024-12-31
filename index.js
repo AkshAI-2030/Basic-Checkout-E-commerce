@@ -1,11 +1,10 @@
 const express = require('express');
-const { resolve } = require('path');
 const app = express();
 const port = 3010;
 const cors = require('cors');
 
 app.use(cors());
-app.use(express.static('static'));
+app.use(express.json());
 
 let cart = [
   { productId: 1, name: 'Laptop', price: 50000, quantity: 1 },
