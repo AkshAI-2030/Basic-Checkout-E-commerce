@@ -12,21 +12,27 @@ let cart = [
 ];
 
 function addToCart(cart, productId, name, price, quantity) {
-  return {
-    productId: productId,
-    name: name,
-    price: price,
-    quantity: quantity,
-  };
+  const existingProductIndex = cart.findIndex(item => item.productId === productId);
+  if (existingProductIndex !== -1) {
+    cart[existingProductIndex].quantity += quantity;  // Increment quantity if product exists
+  } else {
+    cart.push({ productId, name, price, quantity });
+  }
+  return cart;
 }
+
 app.get('/cart/add', (req, res) => {
-  let productId = parseFloat(req.query.productId);
+  let productId = parseInt(req.query.productId, 10);
   let name = req.query.name;
   let price = parseFloat(req.query.price);
-  let quantity = parseFloat(req.query.quantity);
-  let result = addToCart(cart, productId, name, price, quantity);
-  cart.push(result);
-  res.json({ cart: cart });
+  let quantity = parseInt(req.query.quantity, 10);
+
+  if (isNaN(productId) || isNaN(price) || isNaN(quantity) || quantity <= 0) {
+    return res.status(400).json({ error: 'Invalid product details' });
+  }
+
+  cart = addToCart(cart, productId, name, price, quantity);
+  res.json({ cartItems: cart });
 });
 
 function updateCart(cart, productId, quantity) {
@@ -40,21 +46,21 @@ function updateCart(cart, productId, quantity) {
 }
 
 app.get('/cart/edit', (req, res) => {
-  let productId = parseFloat(req.query.productId);
-  let quantity = parseFloat(req.query.quantity);
-  let result = updateCart(cart, productId, quantity);
-  res.json({ cart: cart });
+  let productId = parseInt(req.query.productId, 10);
+  let quantity = parseInt(req.query.quantity, 10);
+  
+  if (isNaN(quantity) || quantity <= 0) {
+    return res.status(400).json({ error: 'Invalid quantity' });
+  }
+
+  cart = updateCart(cart, productId, quantity);
+  res.json({ cartItems: cart });
 });
 
-//.............................................
-function deleteCart(ele, productId) {
-  return ele.productId != productId;
-}
-
 app.get('/cart/delete', (req, res) => {
-  let productId = parseFloat(req.query.productId);
-  let newCart = cart.filter((ele) => deleteCart(ele, productId));
-  res.json({ cart: newCart });
+  let productId = parseInt(req.query.productId, 10);
+  cart = cart.filter(item => item.productId !== productId);
+  res.json({ cartItems: cart });
 });
 
 app.get('/cart', (req, res) => {
@@ -62,21 +68,15 @@ app.get('/cart', (req, res) => {
 });
 
 app.get('/cart/total-quantity', (req, res) => {
-  let totalQuantity = 0;
-  for (let i = 0; i < cart.length; i++) {
-    totalQuantity = totalQuantity + cart[i].quantity;
-  }
-  res.json({ totalQuantity: totalQuantity });
+  let totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+  res.json({ totalQuantity });
 });
 
 app.get('/cart/total-price', (req, res) => {
-  let totalPrice = 0;
-  for (let i = 0; i < cart.length; i++) {
-    totalPrice = totalPrice + cart[i].price * cart[i].quantity;
-  }
-  res.json({ totalPrice: totalPrice });
+  let totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  res.json({ totalPrice });
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });
